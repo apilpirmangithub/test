@@ -42,6 +42,7 @@ const useGeminiGenerator = () => {
 
     try {
       let generatedUrl: string;
+      let originalUrl: string = "";
       let type: "image" | "video";
 
       setLoadingMessage("Crafting your image...");
@@ -49,32 +50,38 @@ const useGeminiGenerator = () => {
 
       if (options.image) {
         if (options.remixType === "paid") {
-          generatedUrl = await openaiService.editImageWithWatermark(
+          const result = await openaiService.editImageWithWatermark(
             options.prompt,
             options.image,
             demoModeParam,
           );
+          generatedUrl = result.url;
+          originalUrl = result.originalUrl;
         } else {
           generatedUrl = await openaiService.editImage(
             options.prompt,
             options.image,
             demoModeParam,
           );
+          originalUrl = generatedUrl;
         }
       } else {
         if (remixType === "paid") {
           // For paid remix (both demo and production), use server-side watermark endpoint
           console.log("🎨 Generating image with server-side watermark");
-          generatedUrl = await openaiService.generateImageFromTextWithWatermark(
+          const result = await openaiService.generateImageFromTextWithWatermark(
             options.prompt,
             demoModeParam,
           );
+          generatedUrl = result.url;
+          originalUrl = result.originalUrl;
         } else {
           // Standard generation without watermark
           generatedUrl = await openaiService.generateImageFromText(
             options.prompt,
             demoModeParam,
           );
+          originalUrl = generatedUrl;
         }
       }
 
@@ -89,6 +96,7 @@ const useGeminiGenerator = () => {
         demoModeParam,
         remixType,
         options.parentAsset,
+        originalUrl,
       );
     } catch (e: any) {
       console.error(e);

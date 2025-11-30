@@ -14,6 +14,7 @@ interface CompactResultCardProps {
   setIsExpanded?: Dispatch<SetStateAction<boolean>>;
   demoMode?: boolean;
   parentAsset?: any;
+  originalUrl?: string;
 }
 
 const CompactResultCard = ({
@@ -28,6 +29,7 @@ const CompactResultCard = ({
   setIsExpanded: externalSetIsExpanded,
   demoMode = false,
   parentAsset,
+  originalUrl,
 }: CompactResultCardProps) => {
   const [localIsExpanded, setLocalIsExpanded] = useState(false);
   const isExpanded = externalSetIsExpanded
@@ -41,6 +43,7 @@ const CompactResultCard = ({
     null,
   );
   const [registeredIpId, setRegisteredIpId] = useState<string | null>(null);
+  const [displayUrl, setDisplayUrl] = useState<string>(imageUrl);
   const licensingFormRef = useRef<any>(null);
 
   const handleLicenseClick = () => {
@@ -57,6 +60,20 @@ const CompactResultCard = ({
     if (licensingFormRef.current?.handleRegister) {
       licensingFormRef.current.handleRegister();
     }
+  };
+
+  const handleRegistrationComplete = (result: {
+    ipId?: string;
+    txHash?: string;
+  }) => {
+    if (result.ipId) {
+      setRegisteredIpId(result.ipId);
+    }
+    // Display clean image (original URL) after successful registration
+    if (originalUrl) {
+      setDisplayUrl(originalUrl);
+    }
+    setRegistrationState("success");
   };
 
   if (isExpanded) {
@@ -77,13 +94,13 @@ const CompactResultCard = ({
           <div className="w-full h-full flex items-center justify-center">
             {type === "image" ? (
               <img
-                src={imageUrl}
+                src={displayUrl}
                 alt="Generation result"
                 className="w-full h-full object-contain"
               />
             ) : (
               <video
-                src={imageUrl}
+                src={displayUrl}
                 className="w-full h-full object-contain"
                 controls
               />
@@ -348,14 +365,7 @@ const CompactResultCard = ({
                 onRegisterStart={(state) => {
                   console.log("Registration started:", state);
                 }}
-                onRegisterComplete={(result) => {
-                  if (result.ipId) {
-                    setRegisteredIpId(result.ipId);
-                    setRegistrationState("success");
-                  } else {
-                    setRegistrationState("success");
-                  }
-                }}
+                onRegisterComplete={handleRegistrationComplete}
               />
             </div>
           )}
@@ -375,12 +385,12 @@ const CompactResultCard = ({
     >
       {type === "image" ? (
         <img
-          src={imageUrl}
+          src={displayUrl}
           alt="Generation result"
           className="w-full h-full object-cover"
         />
       ) : (
-        <video src={imageUrl} className="w-full h-full object-cover" />
+        <video src={displayUrl} className="w-full h-full object-cover" />
       )}
 
       {/* Hover Overlay */}
