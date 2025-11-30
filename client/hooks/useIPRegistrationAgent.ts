@@ -99,10 +99,13 @@ export function useIPRegistrationAgent() {
             try {
               const formData = new FormData();
               formData.append("image", file);
-              const visionResponse = await fetch("/api/vision-image-detection", {
-                method: "POST",
-                body: formData,
-              });
+              const visionResponse = await fetch(
+                "/api/vision-image-detection",
+                {
+                  method: "POST",
+                  body: formData,
+                },
+              );
 
               if (visionResponse.ok) {
                 const visionCheck = await visionResponse.json();
@@ -146,14 +149,20 @@ export function useIPRegistrationAgent() {
               }
               return { found: false };
             } catch (hashError) {
-              console.warn("Hash whitelist check failed, continuing:", hashError);
+              console.warn(
+                "Hash whitelist check failed, continuing:",
+                hashError,
+              );
               return { found: false };
             }
           })(),
         ]);
 
         // Handle vision detection blocking
-        if (visionResult.status === "fulfilled" && visionResult.value?.blocked) {
+        if (
+          visionResult.status === "fulfilled" &&
+          visionResult.value?.blocked
+        ) {
           setRegisterState({
             status: "error",
             progress: 0,
