@@ -73,6 +73,11 @@ const LicensingFormComponent = ({
     "idle" | "registering-derivative" | "claiming-revenue" | "success"
   >("idle");
 
+  // Expose handleRegister to parent component via ref
+  useImperativeHandle(ref, () => ({
+    handleRegister,
+  }));
+
   // Kalkulasi & Validasi Awal
   const isPaidRemix =
     parentAsset && parentAsset.licenses && parentAsset.licenses.length > 0;
