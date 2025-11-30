@@ -91,13 +91,13 @@ const CompactResultCard = ({
           <div className="w-full h-full flex items-center justify-center">
             {type === "image" ? (
               <img
-                src={imageUrl}
+                src={displayUrl}
                 alt="Generation result"
                 className="w-full h-full object-contain"
               />
             ) : (
               <video
-                src={imageUrl}
+                src={displayUrl}
                 className="w-full h-full object-contain"
                 controls
               />
