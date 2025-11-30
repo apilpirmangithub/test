@@ -43,7 +43,7 @@ const CompactResultCard = ({
   const [registeredIpId, setRegisteredIpId] = useState<string | null>(null);
   const licensingFormRef = useRef<any>(null);
 
-  const handleLicenseClick = async () => {
+  const handleLicenseClick = () => {
     if (!parentAsset) {
       setRegistrationError("Parent asset data required for licensing");
       setRegistrationState("error");
@@ -54,12 +54,8 @@ const CompactResultCard = ({
     setRegistrationError(null);
     setRegisteredIpId(null);
 
-    try {
-      licensingFormRef.current?.handleRegister();
-    } catch (error: any) {
-      const errorMsg = error?.message || String(error);
-      setRegistrationError(errorMsg);
-      setRegistrationState("error");
+    if (licensingFormRef.current?.handleRegister) {
+      licensingFormRef.current.handleRegister();
     }
   };
 
