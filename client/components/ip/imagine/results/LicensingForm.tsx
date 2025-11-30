@@ -45,7 +45,7 @@ interface LicensingFormProps {
 
 // --- KOMPONEN UTAMA ---
 
-const LicensingForm = ({
+const LicensingFormComponent = ({
   imageUrl,
   imageName = "generated-image.png",
   type,
@@ -55,7 +55,7 @@ const LicensingForm = ({
   parentAsset,
   onRegisterStart,
   onRegisterComplete,
-}: LicensingFormProps) => {
+}: LicensingFormProps, ref: any) => {
   const { authenticated } = usePrivy();
   const { wallets } = useWallets();
 
