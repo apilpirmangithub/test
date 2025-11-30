@@ -43,7 +43,7 @@ export const generateImageFromText = async (
 export const generateImageFromTextWithWatermark = async (
   prompt: string,
   demoMode: boolean = false,
-): Promise<string> => {
+): Promise<{ url: string; originalUrl: string }> => {
   if (!prompt) throw new Error("Prompt is required.");
 
   try {
@@ -82,7 +82,7 @@ export const generateImageFromTextWithWatermark = async (
     const { addCanvasWatermark } = await import("@/lib/utils/add-watermark");
     const watermarkedUrl = await addCanvasWatermark(imageUrl, "protected:");
 
-    return watermarkedUrl;
+    return { url: watermarkedUrl, originalUrl: imageUrl };
   } catch (error) {
     throw error;
   }
