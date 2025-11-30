@@ -115,7 +115,7 @@ export const WhitelistDetailsModal: React.FC<WhitelistDetailsModalProps> = ({
   };
 
   const getStoryExplorerUrl = (ipId: string) => {
-    return `https://aeneid.explorer.story.foundation/ipa/${ipId}`;
+    return `https://explorer.story.foundation/ipa/${ipId}`;
   };
 
   return (
