@@ -2302,7 +2302,7 @@ const IpAssistant = () => {
                             {" "}
                             <span className="mx-1 text-slate-500">���</span>
                             <a
-                              href={`https://aeneid.explorer.story.foundation/ipa/${registerState.ipId}`}
+                              href={`https://explorer.story.foundation/ipa/${registerState.ipId}`}
                               target="_blank"
                               rel="noopener noreferrer"
                               className="text-[#FF4DA6] hover:underline"

@@ -117,7 +117,7 @@ export const handleAddRemixHash: RequestHandler = async (
     }
 
     // Start with client-provided data
-    let metadata: any = { 
+    let metadata: any = {
       timestamp: Date.now(),
       ipId,
       ...clientData,
@@ -192,11 +192,25 @@ export const handleAddRemixHash: RequestHandler = async (
           Object.entries(fullAssetDetails).filter(
             ([key]) =>
               ![
-                "ipId", "title", "owner", "ownerAddress", "mediaType", "parentsCount", 
-                "isDerivative", "licenses", "licenseTermsIds", "licenseTemplates", 
-                "licenseVisibility", "royaltyContext", "maxMintingFee", "maxRts", 
-                "maxRevenueShare", "parentIpIds", "parentIpDetails", "description", 
-                "ipaMetadataUri"
+                "ipId",
+                "title",
+                "owner",
+                "ownerAddress",
+                "mediaType",
+                "parentsCount",
+                "isDerivative",
+                "licenses",
+                "licenseTermsIds",
+                "licenseTemplates",
+                "licenseVisibility",
+                "royaltyContext",
+                "maxMintingFee",
+                "maxRts",
+                "maxRevenueShare",
+                "parentIpIds",
+                "parentIpDetails",
+                "description",
+                "ipaMetadataUri",
               ].includes(key),
           ),
         ),
@@ -324,7 +338,7 @@ export const handleCheckRemixHash: RequestHandler = async (
       const derivativesAllowed =
         licenses.length > 0
           ? licenses[0].terms?.derivativesAllowed === true
-          : true; 
+          : true;
 
       return res.json({
         found: true,
@@ -352,7 +366,7 @@ export const handleCheckRemixHash: RequestHandler = async (
         // Calculate similarity as percentage (64 is max distance for 64-bit hash)
         const similarity = ((64 - distance) / 64) * 100;
 
-        if (similarity >= 80 && similarity > maxSimilarity) {
+        if (similarity >= 92 && similarity > maxSimilarity) {
           maxSimilarity = similarity;
           mostSimilar = whitelistEntry;
         }
