@@ -155,6 +155,7 @@ export const CreationProvider: React.FC<{ children: ReactNode }> = ({
       isDemo: boolean = false,
       remixType?: "paid" | "free" | null,
       parentAsset?: any,
+      originalUrl?: string,
     ) => {
       const newCreation: Creation = {
         id: `creation_${Date.now()}`,
@@ -165,6 +166,7 @@ export const CreationProvider: React.FC<{ children: ReactNode }> = ({
         isDemo,
         remixType,
         parentAsset,
+        originalUrl,
       };
       setCreations((prev) => [newCreation, ...prev]);
 
