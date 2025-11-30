@@ -362,14 +362,7 @@ const CompactResultCard = ({
                 onRegisterStart={(state) => {
                   console.log("Registration started:", state);
                 }}
-                onRegisterComplete={(result) => {
-                  if (result.ipId) {
-                    setRegisteredIpId(result.ipId);
-                    setRegistrationState("success");
-                  } else {
-                    setRegistrationState("success");
-                  }
-                }}
+                onRegisterComplete={handleRegistrationComplete}
               />
             </div>
           )}
