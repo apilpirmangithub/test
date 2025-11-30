@@ -62,6 +62,17 @@ const CompactResultCard = ({
     }
   };
 
+  const handleRegistrationComplete = (result: { ipId?: string; txHash?: string }) => {
+    if (result.ipId) {
+      setRegisteredIpId(result.ipId);
+    }
+    // Display clean image (original URL) after successful registration
+    if (originalUrl) {
+      setDisplayUrl(originalUrl);
+    }
+    setRegistrationState("success");
+  };
+
   if (isExpanded) {
     return (
       <motion.div
