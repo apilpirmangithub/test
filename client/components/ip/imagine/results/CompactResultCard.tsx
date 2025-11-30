@@ -62,7 +62,10 @@ const CompactResultCard = ({
     }
   };
 
-  const handleRegistrationComplete = (result: { ipId?: string; txHash?: string }) => {
+  const handleRegistrationComplete = (result: {
+    ipId?: string;
+    txHash?: string;
+  }) => {
     if (result.ipId) {
       setRegisteredIpId(result.ipId);
     }
