@@ -92,73 +92,93 @@ export function useIPRegistrationAgent() {
         // ============================================
         // TIER 1: HASH/VISION DETECTION (BLOCKING)
         // ============================================
-        // Check if image is a remix or similar to existing IPs
-        // If blocked here, stop immediately - do NOT proceed to Tier 2
-
-        // Vision-based image detection (most powerful)
-        try {
-          const formData = new FormData();
-          formData.append("image", file);
-          const visionResponse = await fetch("/api/vision-image-detection", {
-            method: "POST",
-            body: formData,
-          });
-
-          if (visionResponse.ok) {
-            const visionCheck = await visionResponse.json();
-            if (visionCheck.blocked) {
-              setRegisterState({
-                status: "error",
-                progress: 0,
-                error:
-                  visionCheck.message ||
-                  "Image mirip dengan IP yang sudah terdaftar. Tidak dapat registrasi.",
+        // Run vision and hash checks in PARALLEL (not sequential)
+        const [visionResult, hashResult] = await Promise.allSettled([
+          // Vision-based image detection (most powerful)
+          (async () => {
+            try {
+              const formData = new FormData();
+              formData.append("image", file);
+              const visionResponse = await fetch("/api/vision-image-detection", {
+                method: "POST",
+                body: formData,
               });
-              return { success: false, reason: "vision_match_found" } as const;
+
+              if (visionResponse.ok) {
+                const visionCheck = await visionResponse.json();
+                if (visionCheck.blocked) {
+                  return {
+                    blocked: true,
+                    message:
+                      visionCheck.message ||
+                      "Image mirip dengan IP yang sudah terdaftar. Tidak dapat registrasi.",
+                  };
+                }
+              }
+              return { blocked: false };
+            } catch (visionError) {
+              console.warn(
+                "Vision-based detection failed, continuing:",
+                visionError,
+              );
+              return { blocked: false };
             }
-          }
-        } catch (visionError) {
-          console.warn(
-            "Vision-based detection failed, continuing:",
-            visionError,
-          );
-          // Don't block registration if vision check fails
+          })(),
+          // Hash whitelist check
+          (async () => {
+            try {
+              const hash = await calculateFileHash(file);
+              const hashCheckResponse = await fetch("/api/check-remix-hash", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ hash }),
+              });
+
+              if (hashCheckResponse.ok) {
+                const hashCheck = await hashCheckResponse.json();
+                if (hashCheck.found) {
+                  return {
+                    found: true,
+                    ipId: hashCheck.ipId,
+                    title: hashCheck.title,
+                  };
+                }
+              }
+              return { found: false };
+            } catch (hashError) {
+              console.warn("Hash whitelist check failed, continuing:", hashError);
+              return { found: false };
+            }
+          })(),
+        ]);
+
+        // Handle vision detection blocking
+        if (visionResult.status === "fulfilled" && visionResult.value?.blocked) {
+          setRegisterState({
+            status: "error",
+            progress: 0,
+            error: visionResult.value.message,
+          });
+          return { success: false, reason: "vision_match_found" } as const;
         }
 
-        // Check hash against remix whitelist
-        try {
-          const hash = await calculateFileHash(file);
-          const hashCheckResponse = await fetch("/api/check-remix-hash", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ hash }),
+        // Handle hash remix offer
+        if (hashResult.status === "fulfilled" && hashResult.value?.found) {
+          setRegisterState({
+            status: "idle",
+            progress: 0,
+            error: null,
           });
-
-          if (hashCheckResponse.ok) {
-            const hashCheck = await hashCheckResponse.json();
-            if (hashCheck.found) {
-              // Hash found - offer remix instead of blocking
-              setRegisterState({
-                status: "idle",
-                progress: 0,
-                error: null,
-              });
-              return {
-                success: false,
-                reason: "hash_found_offer_remix",
-                matchedIpId: hashCheck.ipId,
-                matchedTitle: hashCheck.title,
-              } as const;
-            }
-          }
-        } catch (hashError) {
-          console.warn("Hash whitelist check failed, continuing:", hashError);
-          // Don't block registration if hash check fails
+          return {
+            success: false,
+            reason: "hash_found_offer_remix",
+            matchedIpId: hashResult.value.ipId,
+            matchedTitle: hashResult.value.title,
+          } as const;
         }
 
         // ✅ TIER 1 DETECTION COMPLETE
         // Hash/Vision checks passed - image is allowed to proceed
-        // Now continue to Tier 2: Brand/Character detection
 
         const licenseSettings = getLicenseSettingsByGroup(
           group,
@@ -188,47 +208,60 @@ export function useIPRegistrationAgent() {
         setRegisterState({ status: "compressing", progress: 10, error: null });
         const compressedFile = await compressImage(file);
 
+        // Parallel: upload image + calculate creator address while compressing
         setRegisterState((p) => ({
           ...p,
           status: "uploading-image",
           progress: 25,
         }));
-        const fileUpload = await uploadFile(compressedFile);
-        const imageCid = extractCid(fileUpload.cid || fileUpload.url);
-        const imageGateway = fileUpload.https || toHttps(imageCid);
-        const imageHash = await sha256HexOfFile(compressedFile);
+
+        const [fileUploadResult, creatorAddrResult] = await Promise.all([
+          uploadFile(compressedFile),
+          (async () => {
+            let addr: string | undefined;
+            try {
+              const providerTmp: any =
+                ethereumProvider || (globalThis as any).ethereum;
+              if (providerTmp) {
+                const walletClientTmp = createWalletClient({
+                  transport: custom(providerTmp),
+                });
+                const addrs = await walletClientTmp.getAddresses();
+                if (addrs && addrs[0]) addr = String(addrs[0]);
+              }
+            } catch {}
+            if (!addr) {
+              try {
+                const guestPk = (import.meta as any).env
+                  ?.VITE_GUEST_PRIVATE_KEY;
+                if (guestPk) {
+                  const normalized = String(guestPk).startsWith("0x")
+                    ? String(guestPk)
+                    : `0x${String(guestPk)}`;
+                  const guestAccount = privateKeyToAccount(
+                    normalized as `0x${string}`,
+                  );
+                  addr = guestAccount.address;
+                }
+              } catch {}
+            }
+            return addr;
+          })(),
+          sha256HexOfFile(compressedFile),
+        ]);
+
+        const imageCid = extractCid(
+          fileUploadResult.cid || fileUploadResult.url,
+        );
+        const imageGateway = fileUploadResult.https || toHttps(imageCid);
+        const imageHash = creatorAddrResult[2];
+        const creatorAddr = creatorAddrResult[0];
 
         setRegisterState((p) => ({
           ...p,
           status: "creating-metadata",
           progress: 50,
         }));
-        let creatorAddr: string | undefined;
-        try {
-          const providerTmp: any =
-            ethereumProvider || (globalThis as any).ethereum;
-          if (providerTmp) {
-            const walletClientTmp = createWalletClient({
-              transport: custom(providerTmp),
-            });
-            const addrs = await walletClientTmp.getAddresses();
-            if (addrs && addrs[0]) creatorAddr = String(addrs[0]);
-          }
-        } catch {}
-        if (!creatorAddr) {
-          try {
-            const guestPk = (import.meta as any).env?.VITE_GUEST_PRIVATE_KEY;
-            if (guestPk) {
-              const normalized = String(guestPk).startsWith("0x")
-                ? String(guestPk)
-                : `0x${String(guestPk)}`;
-              const guestAccount = privateKeyToAccount(
-                normalized as `0x${string}`,
-              );
-              creatorAddr = guestAccount.address;
-            }
-          } catch {}
-        }
         const ipMetadata = {
           name: intent?.title || file.name,
           title: intent?.title || file.name,
