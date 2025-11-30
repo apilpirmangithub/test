@@ -38,7 +38,7 @@ const CompactResultCard = ({
     "idle" | "loading" | "success" | "error"
   >("idle");
   const [registrationError, setRegistrationError] = useState<string | null>(
-    null
+    null,
   );
   const [registeredIpId, setRegisteredIpId] = useState<string | null>(null);
   const licensingFormRef = useRef<any>(null);
