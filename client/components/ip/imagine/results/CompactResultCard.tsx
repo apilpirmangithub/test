@@ -29,6 +29,7 @@ const CompactResultCard = ({
   setIsExpanded: externalSetIsExpanded,
   demoMode = false,
   parentAsset,
+  originalUrl,
 }: CompactResultCardProps) => {
   const [localIsExpanded, setLocalIsExpanded] = useState(false);
   const isExpanded = externalSetIsExpanded
@@ -42,6 +43,7 @@ const CompactResultCard = ({
     null,
   );
   const [registeredIpId, setRegisteredIpId] = useState<string | null>(null);
+  const [displayUrl, setDisplayUrl] = useState<string>(imageUrl);
   const licensingFormRef = useRef<any>(null);
 
   const handleLicenseClick = () => {
