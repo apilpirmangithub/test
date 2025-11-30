@@ -16,13 +16,20 @@ export const handleCaptureAssetVision: RequestHandler = async (req, res) => {
     // to validate it's accessible
 
     try {
-      const imgResponse = await fetch(mediaUrl, {
-        method: "HEAD",
-        timeout: 5000,
-      });
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 5000);
 
-      if (!imgResponse.ok) {
-        console.warn(`Asset image not accessible: ${mediaUrl}`);
+      try {
+        const imgResponse = await fetch(mediaUrl, {
+          method: "HEAD",
+          signal: controller.signal,
+        });
+
+        if (!imgResponse.ok) {
+          console.warn(`Asset image not accessible: ${mediaUrl}`);
+        }
+      } finally {
+        clearTimeout(timeout);
       }
     } catch (err) {
       console.warn(`Failed to verify asset image: ${mediaUrl}`, err);
