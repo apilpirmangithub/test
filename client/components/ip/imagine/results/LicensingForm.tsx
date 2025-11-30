@@ -664,4 +664,5 @@ const LicensingFormComponent = ({
   );
 };
 
+const LicensingForm = forwardRef(LicensingFormComponent);
 export default LicensingForm;
