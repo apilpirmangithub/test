@@ -14,6 +14,7 @@ interface CompactResultCardProps {
   setIsExpanded?: Dispatch<SetStateAction<boolean>>;
   demoMode?: boolean;
   parentAsset?: any;
+  originalUrl?: string;
 }
 
 const CompactResultCard = ({
