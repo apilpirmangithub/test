@@ -17,6 +17,7 @@ export interface Creation {
   isDemo?: boolean;
   remixType?: "paid" | "free" | null;
   parentAsset?: any;
+  originalUrl?: string;
 }
 
 interface CreationContextType {
