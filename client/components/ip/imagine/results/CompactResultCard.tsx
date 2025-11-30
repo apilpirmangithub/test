@@ -336,8 +336,8 @@ const CompactResultCard = ({
           </button>
 
           {/* Hidden Licensing Form for background processing */}
-          <div style={{ display: "none" }}>
-            {parentAsset && (
+          {parentAsset && (
+            <div style={{ display: "none" }}>
               <LicensingForm
                 ref={licensingFormRef}
                 imageUrl={imageUrl}
@@ -346,19 +346,19 @@ const CompactResultCard = ({
                 isLoading={isLoading}
                 parentAsset={parentAsset}
                 onRegisterStart={(state) => {
-                  if (state.status === "success") {
-                    setRegistrationState("success");
-                  }
+                  console.log("Registration started:", state);
                 }}
                 onRegisterComplete={(result) => {
                   if (result.ipId) {
                     setRegisteredIpId(result.ipId);
                     setRegistrationState("success");
+                  } else {
+                    setRegistrationState("success");
                   }
                 }}
               />
-            )}
-          </div>
+            </div>
+          )}
         </motion.div>
       </motion.div>
     );
