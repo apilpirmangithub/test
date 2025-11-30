@@ -1,4 +1,4 @@
-import { useState, Dispatch, SetStateAction } from "react";
+import { useState, useRef, Dispatch, SetStateAction } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import LicensingForm from "./LicensingForm";
 
@@ -34,8 +34,30 @@ const CompactResultCard = ({
     ? externalIsExpanded
     : localIsExpanded;
   const setIsExpanded = externalSetIsExpanded || setLocalIsExpanded;
-  const [showSettingsMenu, setShowSettingsMenu] = useState(false);
-  const [showLicensingForm, setShowLicensingForm] = useState(false);
+  const [registrationState, setRegistrationState] = useState<
+    "idle" | "loading" | "success" | "error"
+  >("idle");
+  const [registrationError, setRegistrationError] = useState<string | null>(
+    null,
+  );
+  const [registeredIpId, setRegisteredIpId] = useState<string | null>(null);
+  const licensingFormRef = useRef<any>(null);
+
+  const handleLicenseClick = () => {
+    if (!parentAsset) {
+      setRegistrationError("Parent asset data required for licensing");
+      setRegistrationState("error");
+      return;
+    }
+
+    setRegistrationState("loading");
+    setRegistrationError(null);
+    setRegisteredIpId(null);
+
+    if (licensingFormRef.current?.handleRegister) {
+      licensingFormRef.current.handleRegister();
+    }
+  };
 
   if (isExpanded) {
     return (
@@ -94,6 +116,120 @@ const CompactResultCard = ({
               />
             </svg>
           </button>
+
+          {/* Notification Overlay */}
+          <AnimatePresence>
+            {registrationState !== "idle" && (
+              <motion.div
+                initial={{ opacity: 0, y: -20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+                className="absolute top-6 left-6 right-6 max-w-sm"
+              >
+                {registrationState === "loading" && (
+                  <div className="rounded-lg bg-blue-500/10 border border-blue-500/30 p-4 flex items-center gap-3">
+                    <div className="inline-block animate-spin">
+                      <svg
+                        className="w-5 h-5 text-blue-400"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+                        />
+                      </svg>
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-semibold text-blue-400">
+                        Registering derivative IP...
+                      </p>
+                      <p className="text-xs text-slate-400 mt-1">
+                        Please wait, this may take a moment
+                      </p>
+                    </div>
+                  </div>
+                )}
+
+                {registrationState === "success" && (
+                  <div className="rounded-lg bg-emerald-500/10 border border-emerald-500/30 p-4">
+                    <div className="flex items-start gap-3">
+                      <svg
+                        className="w-5 h-5 text-emerald-400 mt-0.5 flex-shrink-0"
+                        fill="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                      <div className="flex-1 min-w-0">
+                        <h4 className="text-sm font-semibold text-emerald-400 mb-1">
+                          Derivative Registered!
+                        </h4>
+                        <p className="text-xs text-slate-300 mb-2">
+                          🔓 You can now preview this image without watermark
+                          protection.
+                        </p>
+                        {registeredIpId && registeredIpId !== "pending" && (
+                          <a
+                            href={`https://explorer.story.foundation/ipa/${registeredIpId}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1.5 text-xs text-emerald-400 hover:text-emerald-300 font-medium transition-colors"
+                          >
+                            View on Explorer
+                            <svg
+                              className="w-3 h-3"
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"
+                              />
+                            </svg>
+                          </a>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {registrationState === "error" && (
+                  <div className="rounded-lg bg-red-500/10 border border-red-500/30 p-4">
+                    <div className="flex items-start gap-3">
+                      <svg
+                        className="w-5 h-5 text-red-400 mt-0.5 flex-shrink-0"
+                        fill="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path d="M12 8v4m0 4v.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                      <div className="flex-1 min-w-0">
+                        <h4 className="text-sm font-semibold text-red-400 mb-1">
+                          Registration Failed
+                        </h4>
+                        <p className="text-xs text-slate-300 break-words">
+                          {registrationError}
+                        </p>
+                        <button
+                          onClick={() => setRegistrationState("idle")}
+                          className="mt-2 text-xs text-red-400 hover:text-red-300 font-medium transition-colors"
+                        >
+                          Try again
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </motion.div>
+            )}
+          </AnimatePresence>
         </motion.div>
 
         {/* Action Buttons - Mobile Responsive Layout */}
@@ -169,155 +305,60 @@ const CompactResultCard = ({
           )}
 
           <button
-            onClick={() => setShowLicensingForm(true)}
-            className="px-3 sm:px-4 py-2 sm:py-2.5 rounded-md bg-[#FF4DA6]/20 hover:bg-[#FF4DA6]/30 text-[#FF4DA6] font-medium transition-colors flex items-center justify-center gap-1 text-xs sm:text-sm whitespace-nowrap border border-[#FF4DA6]/30"
+            onClick={handleLicenseClick}
+            disabled={registrationState === "loading"}
+            className="px-3 sm:px-4 py-2 sm:py-2.5 rounded-md bg-[#FF4DA6]/20 hover:bg-[#FF4DA6]/30 disabled:opacity-50 disabled:cursor-not-allowed text-[#FF4DA6] font-medium transition-colors flex items-center justify-center gap-1 text-xs sm:text-sm whitespace-nowrap border border-[#FF4DA6]/30"
             title="Register & License IP"
           >
-            <svg
-              className="w-4 h-4 sm:w-4 sm:h-4 flex-shrink-0"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
-              />
-            </svg>
-            <span>Licensing</span>
-          </button>
-
-          <div className="relative">
-            <button
-              onClick={() => setShowSettingsMenu(!showSettingsMenu)}
-              className="px-3 sm:px-4 py-2 sm:py-2.5 rounded-md bg-slate-800 hover:bg-slate-700 text-slate-100 font-medium transition-colors flex items-center justify-center gap-1 text-xs sm:text-sm whitespace-nowrap"
-              title="Options"
-            >
-              <svg
-                className="w-4 h-4 sm:w-4 sm:h-4 flex-shrink-0"
-                fill="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <circle cx="5" cy="12" r="2" />
-                <circle cx="12" cy="12" r="2" />
-                <circle cx="19" cy="12" r="2" />
-              </svg>
-              <span>Options</span>
-            </button>
-
-            {/* Settings Menu Popup */}
-            <AnimatePresence>
-              {showSettingsMenu && (
-                <>
-                  <motion.div
-                    initial={{ opacity: 0, scale: 0.95, y: 8 }}
-                    animate={{ opacity: 1, scale: 1, y: 0 }}
-                    exit={{ opacity: 0, scale: 0.95, y: 8 }}
-                    className="absolute bottom-full mb-0.5 left-1/2 -translate-x-1/2 sm:left-auto sm:right-0 sm:translate-x-0 bg-slate-950 border border-slate-800 rounded-md shadow-xl z-50 min-w-[160px]"
-                  >
-                    <button
-                      onClick={() => {
-                        setShowSettingsMenu(false);
-                        window.location.hash = "#remix";
-                      }}
-                      className="w-full px-2 py-1.5 text-left hover:bg-slate-900 first:rounded-t-md transition-colors flex items-center gap-1.5 group text-xs"
-                    >
-                      <svg
-                        className="w-3.5 h-3.5 text-[#FF4DA6] group-hover:text-[#FF4DA6]/80 flex-shrink-0"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M7 16V4m0 0L3 8m4-4l4 4V20m6-4v4m0-12l4-4m-4 4l-4-4"
-                        />
-                      </svg>
-                      <span className="font-medium text-slate-100">Remix</span>
-                    </button>
-
-                    <div className="border-t border-slate-800" />
-
-                    <button
-                      onClick={() => {
-                        setShowSettingsMenu(false);
-                        setShowLicensingForm(true);
-                      }}
-                      className="w-full px-2 py-1.5 text-left hover:bg-slate-900 last:rounded-b-md transition-colors flex items-center gap-1.5 group text-xs"
-                    >
-                      <svg
-                        className="w-3.5 h-3.5 text-[#FF4DA6] group-hover:text-[#FF4DA6]/80 flex-shrink-0"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
-                        />
-                      </svg>
-                      <span className="font-medium text-slate-100">
-                        Licensing
-                      </span>
-                    </button>
-                  </motion.div>
-
-                  {/* Close menu when clicking outside */}
-                  <div
-                    className="fixed inset-0 z-40"
-                    onClick={() => setShowSettingsMenu(false)}
-                  />
-                </>
-              )}
-            </AnimatePresence>
-          </div>
-
-          {/* Licensing Form Modal */}
-          <AnimatePresence>
-            {showLicensingForm && (
+            {registrationState === "loading" ? (
               <>
-                {/* Dark Overlay */}
-                <motion.div
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  onClick={() => setShowLicensingForm(false)}
-                  className="fixed inset-0 bg-black/50 backdrop-blur-sm z-40"
-                />
-
-                {/* Licensing Modal */}
-                <motion.div
-                  initial={{ opacity: 0, scale: 0.9 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0, scale: 0.9 }}
-                  className="fixed inset-0 flex items-center justify-center p-4 z-50 pointer-events-none"
+                <span className="inline-block animate-spin">⚙️</span>
+                <span>Registering...</span>
+              </>
+            ) : (
+              <>
+                <svg
+                  className="w-4 h-4 sm:w-4 sm:h-4 flex-shrink-0"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
                 >
-                  <div className="pointer-events-auto w-full max-w-2xl rounded-xl bg-gradient-to-b from-slate-900 to-slate-950 border border-slate-800 shadow-2xl max-h-[85vh] overflow-y-auto ring-offset-2 ring-offset-transparent">
-                    <LicensingForm
-                      imageUrl={imageUrl}
-                      type={type}
-                      demoMode={demoMode}
-                      isLoading={isLoading}
-                      parentAsset={parentAsset}
-                      onClose={() => setShowLicensingForm(false)}
-                      onRegisterStart={(state) => {
-                        console.log("Registration started:", state);
-                      }}
-                      onRegisterComplete={(result) => {
-                        console.log("Registration completed:", result);
-                      }}
-                    />
-                  </div>
-                </motion.div>
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                  />
+                </svg>
+                <span>Licensing</span>
               </>
             )}
-          </AnimatePresence>
+          </button>
+
+          {/* Hidden Licensing Form for background processing */}
+          {parentAsset && (
+            <div style={{ display: "none" }}>
+              <LicensingForm
+                ref={licensingFormRef}
+                imageUrl={imageUrl}
+                type={type}
+                demoMode={demoMode}
+                isLoading={isLoading}
+                parentAsset={parentAsset}
+                onRegisterStart={(state) => {
+                  console.log("Registration started:", state);
+                }}
+                onRegisterComplete={(result) => {
+                  if (result.ipId) {
+                    setRegisteredIpId(result.ipId);
+                    setRegistrationState("success");
+                  } else {
+                    setRegistrationState("success");
+                  }
+                }}
+              />
+            </div>
+          )}
         </motion.div>
       </motion.div>
     );

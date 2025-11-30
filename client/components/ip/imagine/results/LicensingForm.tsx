@@ -1,11 +1,10 @@
-import React, { useState } from "react";
+import React, { useState, forwardRef, useImperativeHandle } from "react";
 import { usePrivy, useWallets } from "@privy-io/react-auth";
 import { StoryClient, WIP_TOKEN_ADDRESS } from "@story-protocol/core-sdk";
 import { createWalletClient, custom, parseEther, http } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
-// Asumsi path ini benar dan fungsi keccakOfJson bekerja
 import { keccakOfJson } from "@/lib/utils/crypto";
-import { Address } from "viem"; // Tipe Address dari viem
+import { Address } from "viem";
 
 // --- KONSTANTA ---
 const OFFCHAIN_LICENSE_TERMS_URI =
@@ -46,17 +45,20 @@ interface LicensingFormProps {
 
 // --- KOMPONEN UTAMA ---
 
-const LicensingForm = ({
-  imageUrl,
-  imageName = "generated-image.png",
-  type,
-  demoMode = false,
-  isLoading = false,
-  onClose,
-  parentAsset,
-  onRegisterStart,
-  onRegisterComplete,
-}: LicensingFormProps) => {
+const LicensingFormComponent = (
+  {
+    imageUrl,
+    imageName = "generated-image.png",
+    type,
+    demoMode = false,
+    isLoading = false,
+    onClose,
+    parentAsset,
+    onRegisterStart,
+    onRegisterComplete,
+  }: LicensingFormProps,
+  ref: any,
+) => {
   const { authenticated } = usePrivy();
   const { wallets } = useWallets();
 
@@ -73,6 +75,11 @@ const LicensingForm = ({
   const [currentStep, setCurrentStep] = useState<
     "idle" | "registering-derivative" | "claiming-revenue" | "success"
   >("idle");
+
+  // Expose handleRegister to parent component via ref
+  useImperativeHandle(ref, () => ({
+    handleRegister,
+  }));
 
   // Kalkulasi & Validasi Awal
   const isPaidRemix =
@@ -660,4 +667,5 @@ const LicensingForm = ({
   );
 };
 
+const LicensingForm = forwardRef(LicensingFormComponent);
 export default LicensingForm;
