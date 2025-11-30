@@ -215,7 +215,7 @@ export function useIPRegistrationAgent() {
           progress: 25,
         }));
 
-        const [fileUploadResult, creatorAddrResult] = await Promise.all([
+        const [fileUploadResult, creatorAddr, imageHash] = await Promise.all([
           uploadFile(compressedFile),
           (async () => {
             let addr: string | undefined;
@@ -254,8 +254,6 @@ export function useIPRegistrationAgent() {
           fileUploadResult.cid || fileUploadResult.url,
         );
         const imageGateway = fileUploadResult.https || toHttps(imageCid);
-        const imageHash = creatorAddrResult[2];
-        const creatorAddr = creatorAddrResult[0];
 
         setRegisterState((p) => ({
           ...p,
