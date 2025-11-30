@@ -168,6 +168,27 @@ const CompactResultCard = ({
             </button>
           )}
 
+          <button
+            onClick={() => setShowLicensingForm(true)}
+            className="px-3 sm:px-4 py-2 sm:py-2.5 rounded-md bg-[#FF4DA6]/20 hover:bg-[#FF4DA6]/30 text-[#FF4DA6] font-medium transition-colors flex items-center justify-center gap-1 text-xs sm:text-sm whitespace-nowrap border border-[#FF4DA6]/30"
+            title="Register & License IP"
+          >
+            <svg
+              className="w-4 h-4 sm:w-4 sm:h-4 flex-shrink-0"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+              />
+            </svg>
+            <span>Licensing</span>
+          </button>
+
           <div className="relative">
             <button
               onClick={() => setShowSettingsMenu(!showSettingsMenu)}
