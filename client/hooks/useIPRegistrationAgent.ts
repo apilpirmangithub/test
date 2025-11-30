@@ -297,13 +297,8 @@ export function useIPRegistrationAgent() {
           status: "uploading-metadata",
           progress: 60,
         }));
-        const ipMetaUpload = await uploadJSON(ipMetadata);
-        const ipMetaCid = extractCid(ipMetaUpload.cid || ipMetaUpload.url);
-        const ipMetadataURI = toIpfsUri(ipMetaCid);
-        const ipMetadataHash = keccakOfJson(ipMetadata);
 
-        setRegisterState((p) => ({ ...p, status: "minting", progress: 75 }));
-        // SDK integration pending env/deps (Story Protocol). Guard to avoid silent failure.
+        // Prepare resources in parallel
         const spg = (import.meta as any).env?.VITE_PUBLIC_SPG_COLLECTION;
         if (!spg)
           throw new Error(
@@ -311,6 +306,94 @@ export function useIPRegistrationAgent() {
           );
         const rpcUrl = (import.meta as any).env?.VITE_PUBLIC_STORY_RPC;
         if (!rpcUrl) throw new Error("RPC URL not set (VITE_PUBLIC_STORY_RPC)");
+
+        // Parallel: upload metadata + initialize wallet client + build license terms
+        const [ipMetaUpload, storyClientSetup] = await Promise.all([
+          uploadJSON(ipMetadata),
+          (async () => {
+            const provider = ethereumProvider;
+            let addr: string | undefined;
+            let story: any;
+            if (provider) {
+              try {
+                const chainIdHex: string = await provider.request({
+                  method: "eth_chainId",
+                });
+                if (chainIdHex?.toLowerCase() !== "0x5ea") {
+                  try {
+                    await provider.request({
+                      method: "wallet_switchEthereumChain",
+                      params: [{ chainId: "0x5ea" }],
+                    });
+                  } catch (e) {
+                    try {
+                      await provider.request({
+                        method: "wallet_addEthereumChain",
+                        params: [
+                          {
+                            chainId: "0x5ea",
+                            chainName: "Story",
+                            nativeCurrency: {
+                              name: "IP",
+                              symbol: "IP",
+                              decimals: 18,
+                            },
+                            rpcUrls: rpcUrl
+                              ? [rpcUrl]
+                              : ["https://mainnet.storyrpc.io"],
+                          },
+                        ],
+                      });
+                    } catch {}
+                    try {
+                      await provider.request({
+                        method: "wallet_switchEthereumChain",
+                        params: [{ chainId: "0x5ea" }],
+                      });
+                    } catch {}
+                  }
+                }
+              } catch {}
+              const walletClient = createWalletClient({
+                transport: custom(provider),
+              });
+              const [a] = await walletClient.getAddresses();
+              if (!a) throw new Error("No wallet address available");
+              addr = a as string;
+              story = StoryClient.newClient({
+                account: addr as any,
+                transport: custom(provider),
+                chainId: 1514,
+              });
+            } else {
+              const guestPk = (import.meta as any).env?.VITE_GUEST_PRIVATE_KEY;
+              if (!guestPk)
+                throw new Error(
+                  "No wallet connected and guest key not configured (VITE_GUEST_PRIVATE_KEY).",
+                );
+              const normalized = String(guestPk).startsWith("0x")
+                ? String(guestPk)
+                : `0x${String(guestPk)}`;
+              const guestAccount = privateKeyToAccount(
+                normalized as `0x${string}`,
+              );
+              addr = guestAccount.address;
+              story = StoryClient.newClient({
+                account: guestAccount as any,
+                transport: http(rpcUrl),
+                chainId: 1514,
+              });
+            }
+            return { addr, story };
+          })(),
+        ]);
+
+        const ipMetaCid = extractCid(ipMetaUpload.cid || ipMetaUpload.url);
+        const ipMetadataURI = toIpfsUri(ipMetaCid);
+        const ipMetadataHash = keccakOfJson(ipMetadata);
+
+        const addr = storyClientSetup.addr;
+        const story = storyClientSetup.story;
 
         // Build license terms for Story SDK
         const licenseTermsData = [
@@ -325,79 +408,7 @@ export function useIPRegistrationAgent() {
           },
         ];
 
-        // Init wallet client via Privy provider if available, otherwise fallback to guest key
-        const provider = ethereumProvider;
-        let addr: string | undefined;
-        let story: any;
-        if (provider) {
-          try {
-            const chainIdHex: string = await provider.request({
-              method: "eth_chainId",
-            });
-            if (chainIdHex?.toLowerCase() !== "0x5ea") {
-              try {
-                await provider.request({
-                  method: "wallet_switchEthereumChain",
-                  params: [{ chainId: "0x5ea" }],
-                });
-              } catch (e) {
-                const rpcUrl = (import.meta as any).env?.VITE_PUBLIC_STORY_RPC;
-                try {
-                  await provider.request({
-                    method: "wallet_addEthereumChain",
-                    params: [
-                      {
-                        chainId: "0x5ea",
-                        chainName: "Story",
-                        nativeCurrency: {
-                          name: "IP",
-                          symbol: "IP",
-                          decimals: 18,
-                        },
-                        rpcUrls: rpcUrl
-                          ? [rpcUrl]
-                          : ["https://mainnet.storyrpc.io"],
-                      },
-                    ],
-                  });
-                } catch {}
-                try {
-                  await provider.request({
-                    method: "wallet_switchEthereumChain",
-                    params: [{ chainId: "0x5ea" }],
-                  });
-                } catch {}
-              }
-            }
-          } catch {}
-          const walletClient = createWalletClient({
-            transport: custom(provider),
-          });
-          const [a] = await walletClient.getAddresses();
-          if (!a) throw new Error("No wallet address available");
-          addr = a as string;
-          story = StoryClient.newClient({
-            account: addr as any,
-            transport: custom(provider),
-            chainId: 1514,
-          });
-        } else {
-          const guestPk = (import.meta as any).env?.VITE_GUEST_PRIVATE_KEY;
-          if (!guestPk)
-            throw new Error(
-              "No wallet connected and guest key not configured (VITE_GUEST_PRIVATE_KEY).",
-            );
-          const normalized = String(guestPk).startsWith("0x")
-            ? String(guestPk)
-            : `0x${String(guestPk)}`;
-          const guestAccount = privateKeyToAccount(normalized as `0x${string}`);
-          addr = guestAccount.address;
-          story = StoryClient.newClient({
-            account: guestAccount as any,
-            transport: http(rpcUrl),
-            chainId: 1514,
-          });
-        }
+        setRegisterState((p) => ({ ...p, status: "minting", progress: 75 }));
 
         const result: any =
           await story.ipAsset.mintAndRegisterIpAssetWithPilTerms({
