@@ -34,7 +34,6 @@ const CompactResultCard = ({
     ? externalIsExpanded
     : localIsExpanded;
   const setIsExpanded = externalSetIsExpanded || setLocalIsExpanded;
-  const [showSettingsMenu, setShowSettingsMenu] = useState(false);
   const [showLicensingForm, setShowLicensingForm] = useState(false);
 
   if (isExpanded) {
@@ -188,95 +187,6 @@ const CompactResultCard = ({
             </svg>
             <span>Licensing</span>
           </button>
-
-          <div className="relative">
-            <button
-              onClick={() => setShowSettingsMenu(!showSettingsMenu)}
-              className="px-3 sm:px-4 py-2 sm:py-2.5 rounded-md bg-slate-800 hover:bg-slate-700 text-slate-100 font-medium transition-colors flex items-center justify-center gap-1 text-xs sm:text-sm whitespace-nowrap"
-              title="Options"
-            >
-              <svg
-                className="w-4 h-4 sm:w-4 sm:h-4 flex-shrink-0"
-                fill="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <circle cx="5" cy="12" r="2" />
-                <circle cx="12" cy="12" r="2" />
-                <circle cx="19" cy="12" r="2" />
-              </svg>
-              <span>Options</span>
-            </button>
-
-            {/* Settings Menu Popup */}
-            <AnimatePresence>
-              {showSettingsMenu && (
-                <>
-                  <motion.div
-                    initial={{ opacity: 0, scale: 0.95, y: 8 }}
-                    animate={{ opacity: 1, scale: 1, y: 0 }}
-                    exit={{ opacity: 0, scale: 0.95, y: 8 }}
-                    className="absolute bottom-full mb-0.5 left-1/2 -translate-x-1/2 sm:left-auto sm:right-0 sm:translate-x-0 bg-slate-950 border border-slate-800 rounded-md shadow-xl z-50 min-w-[160px]"
-                  >
-                    <button
-                      onClick={() => {
-                        setShowSettingsMenu(false);
-                        window.location.hash = "#remix";
-                      }}
-                      className="w-full px-2 py-1.5 text-left hover:bg-slate-900 first:rounded-t-md transition-colors flex items-center gap-1.5 group text-xs"
-                    >
-                      <svg
-                        className="w-3.5 h-3.5 text-[#FF4DA6] group-hover:text-[#FF4DA6]/80 flex-shrink-0"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M7 16V4m0 0L3 8m4-4l4 4V20m6-4v4m0-12l4-4m-4 4l-4-4"
-                        />
-                      </svg>
-                      <span className="font-medium text-slate-100">Remix</span>
-                    </button>
-
-                    <div className="border-t border-slate-800" />
-
-                    <button
-                      onClick={() => {
-                        setShowSettingsMenu(false);
-                        setShowLicensingForm(true);
-                      }}
-                      className="w-full px-2 py-1.5 text-left hover:bg-slate-900 last:rounded-b-md transition-colors flex items-center gap-1.5 group text-xs"
-                    >
-                      <svg
-                        className="w-3.5 h-3.5 text-[#FF4DA6] group-hover:text-[#FF4DA6]/80 flex-shrink-0"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
-                        />
-                      </svg>
-                      <span className="font-medium text-slate-100">
-                        Licensing
-                      </span>
-                    </button>
-                  </motion.div>
-
-                  {/* Close menu when clicking outside */}
-                  <div
-                    className="fixed inset-0 z-40"
-                    onClick={() => setShowSettingsMenu(false)}
-                  />
-                </>
-              )}
-            </AnimatePresence>
-          </div>
 
           {/* Licensing Form Modal */}
           <AnimatePresence>
