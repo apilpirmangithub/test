@@ -39,6 +39,7 @@ interface CreationContextType {
     isDemo?: boolean,
     remixType?: "paid" | "free" | null,
     parentAsset?: any,
+    originalUrl?: string,
   ) => void;
   removeCreation: (id: string) => void;
   clearCreations: () => void;
