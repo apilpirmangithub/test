@@ -382,12 +382,12 @@ const CompactResultCard = ({
     >
       {type === "image" ? (
         <img
-          src={imageUrl}
+          src={displayUrl}
           alt="Generation result"
           className="w-full h-full object-cover"
         />
       ) : (
-        <video src={imageUrl} className="w-full h-full object-cover" />
+        <video src={displayUrl} className="w-full h-full object-cover" />
       )}
 
       {/* Hover Overlay */}
