@@ -143,16 +143,16 @@ export const editImageWithWatermark = async (
   prompt: string,
   image: { imageBytes: string; mimeType: string },
   demoMode: boolean = false,
-): Promise<string> => {
+): Promise<{ url: string; originalUrl: string }> => {
   const editedUrl = await editImage(prompt, image, demoMode);
 
   try {
     const { addCanvasWatermark } = await import("@/lib/utils/add-watermark");
     const watermarkedUrl = await addCanvasWatermark(editedUrl, "protected:");
-    return watermarkedUrl;
+    return { url: watermarkedUrl, originalUrl: editedUrl };
   } catch (error) {
     console.error("Failed to add watermark:", error);
-    return editedUrl;
+    return { url: editedUrl, originalUrl: editedUrl };
   }
 };
 
